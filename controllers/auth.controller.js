@@ -1,5 +1,8 @@
 import User from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { errorHandler } from '../utils/error.js';
+
 // Importa tu errorHandler si lo tienes en otro archivo
 // import { errorHandler } from '../utils/error.js'; 
 
@@ -39,3 +42,38 @@ export const signup = async (req, res, next) => {
         next(error); 
     }
 };
+
+
+export const signin = async (req, res, next) => {
+    const { email, password } = req.body;
+
+    if (!email || !password || email === '' || password === '') {
+        return next(errorHandler(400, 'Todos los campos son obligatorios'));
+    }
+
+    try {
+        const validUser = await User.findOne({ email });
+
+        if (!validUser) {
+            return next(errorHandler(404, 'Usuario no encontrado'));
+        }
+
+        const validPassword = bcrypt.compareSync(password, validUser.password);
+
+        if (!validPassword) {
+            return next(errorHandler(400, 'Contraseña incorrecta'));
+        }
+
+        const token = jwt.sign( { id: validUser._id }, process.env.JWT_SECRET);
+        const { password: pass, ...rest } = validUser._doc;
+
+        res.status(200).cookie("access_token", token, {
+            httpOnly: true,
+        }).json({ message: "Inicio de sesión exitoso", user: rest, token });
+
+
+        res.status(200).json({ message: "Inicio de sesión exitoso", user: rest, token });
+    } catch (error) {
+        next(error);
+    }   
+}; 
