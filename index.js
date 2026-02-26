@@ -2,11 +2,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
+import authRoutes from './routes/auth.route.js';
 
 // Esto carga las variables del archivo .env
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 
 // Elegimos cuál usar. 
 // Mientras estés en el trabajo, usa process.env.MONGO_URL_LOCAL
@@ -28,3 +30,14 @@ app.listen(PORT, () => {
 });
 
 app.use('/api/user', userRoutes);
+app.use('/api/auth', authRoutes); 
+
+app.use((err, req, res, next) => {
+  const statusCode = err.status || 500;
+  const message = err.message || 'Error interno del servidor';
+  res.status(statusCode).json({ 
+    success: false,
+    message
+  });
+});
+
