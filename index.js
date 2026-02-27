@@ -4,15 +4,11 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
 
-// Esto carga las variables del archivo .env
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// Elegimos cuál usar. 
-// Mientras estés en el trabajo, usa process.env.MONGO_URL_LOCAL
-// Cuando vayas a entregar, cambias LOCAL por ATLAS aquí abajo:
 const connectionString = process.env.MONGO_URL_LOCAL;
 
 mongoose.connect(connectionString)
@@ -24,20 +20,27 @@ mongoose.connect(connectionString)
     console.error('❌ Error de conexión:', err.message);
   });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`📡 Servidor API corriendo en http://localhost:${PORT}`);
-});
-
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes); 
 
+// --- Middleware de Manejo de Errores Optimizado ---
 app.use((err, req, res, next) => {
-  const statusCode = err.status || 500;
+  // Si por alguna razón los headers ya se enviaron, dejamos que Express maneje el error solo
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  const statusCode = err.statusCode || 500; // Cambiado de err.status a err.statusCode (estándar)
   const message = err.message || 'Error interno del servidor';
-  res.status(statusCode).json({ 
+  
+  return res.status(statusCode).json({ 
     success: false,
+    statusCode,
     message
   });
 });
 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`📡 Servidor API corriendo en http://localhost:${PORT}`);
+});
