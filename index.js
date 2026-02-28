@@ -3,11 +3,16 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import userRoutes from './routes/user.route.js';
 import authRoutes from './routes/auth.route.js';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+
+// Middlewares (Configuración del servidor)
+app.use(express.json()); // Esto permite leer el JSON que envías desde Insomnia
+app.use(cookieParser()); // Esto permite leer el Token de las cookies
+
 
 const connectionString = process.env.MONGO_URL_LOCAL;
 
@@ -39,6 +44,7 @@ app.use((err, req, res, next) => {
     message
   });
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
